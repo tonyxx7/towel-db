@@ -1,0 +1,2 @@
+Currently if a storage value starts with '%%', this will cause that line to be
+recognized as a field header.

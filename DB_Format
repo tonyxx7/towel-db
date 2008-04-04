@@ -1,0 +1,8 @@
+The database in towel-db is fairly simple.  Each record is a new file in the
+database directory tree named with a key.  Within each record is a series of
+entries, or columns.  Each column is started with this header:
+%%[name]
+Until the next header, everything is clustered into the body for that entry.
+No typing is included, and all type conversion must be done manually.
+
+_db is a reserved record name for various information about the database.
