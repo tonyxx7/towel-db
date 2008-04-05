@@ -24,15 +24,15 @@ _open = __builtin__.open
 DB_VERSION = 0
 
 # Reserved record names
-_DB_META = "_db"
+_DB_META = '_db'
 DB_RESERVED = [_DB_META]
 
 # 
 
 # Database open flags
-DB_READ = "r"
-DB_WRITE = "w"
-DB_CREATE = "c"
+DB_READ = 'r'
+DB_WRITE = 'w'
+DB_CREATE = 'c'
 
 class DBError( Exception ):
 	"""Generic database error"""
@@ -42,13 +42,13 @@ class DBVersionMismatch( DBError ):
 	library being used"""
 
 class DBWrongMode( DBError ):
-	"Incorrect mode for the requested operation"
+	'Incorrect mode for the requested operation'
 
 class DBNotFound( DBError ):
-	"No valid database was found"
+	'No valid database was found'
 
 class _Record:
-	"A record within a towel-db database"
+	'A record within a towel-db database'
 	path = ""
 	exists = False
 	mode = ""
@@ -83,7 +83,7 @@ class _Record:
 		try:
 			return self.data[key]
 		except( KeyError ):
-			raise KeyError, "Field not found in record"
+			raise KeyError, 'Field not found in record'
 
 	def __iter__( self ):
 		return iter( self.data )
@@ -91,11 +91,11 @@ class _Record:
 	def __setitem__( self, key, value ):
 		# Check mode
 		if self.mode is DB_READ:
-			raise DBWrongMode, "Database opened read-only"
+			raise DBWrongMode, 'Database opened read-only'
 		
 		# Make sure the type is right
 		if not type( key ) == type( value ) == str:
-			raise TypeError, "Key and value must both be strings (for now)"
+			raise TypeError, 'Key and value must both be strings (for now)'
 			
 		if not self.changed:
 			# Record has chanegd; OK to sync
@@ -106,13 +106,13 @@ class _Record:
 		
 	def __delitem__( self, key ):
 		if self.mode is DB_READ:
-			raise DBWrongMode, "Database opened read-only"
+			raise DBWrongMode, 'Database opened read-only'
 		
 		if key in self.data:
 			del self.data[key]
 			self.changed = True
 		else:
-			raise KeyError, "Given key is not in record"
+			raise KeyError, 'Given key is not in record'
 
 	def __del__( self ):
 		if self.changed:
@@ -149,7 +149,7 @@ class _Record:
 		"""Mutator function to change the record key.
 		change_key( key, clear=True )"""
 		if not type( key ) == str:
-			raise TypeError, "Key must be a string"
+			raise TypeError, 'Key must be a string'
 		
 		self.key = key
 		if clear:
@@ -159,11 +159,11 @@ class _Record:
 			self.changed = True
 		
 	def get_key( self ):
-		"Accessor function to get the key of the record"
+		'Accessor function to get the key of the record'
 		return self.key
 
 	def clear( self ):
-		"Clear the record of data"
+		'Clear the record of data'
 		self.data = {}
 		changed = True
 
@@ -174,16 +174,16 @@ class _Record:
 		record_path = os.path.join( self.path, self.key )
 
 		# Open the file
-		datafile = _open( record_path, "w" )
+		datafile = _open( record_path, DB_WRITE )
 
 		# Escape dangerous stuff
 		for key in self.data:
-			if self.data[key][0:2] == "%%":
-				self.data[key] = string.join( ['\\', self.data[key]], "" )
+			if self.data[key][0:2] == '%%':
+				self.data[key] = string.join( ['\\', self.data[key]], '' )
 			
 			# Escape the escape char
-			elif self.data[key][0] == "\\":
-				self.data[key] = string.join( ['\\', self.data[key]], "" )
+			elif self.data[key][0] == '\\':
+				self.data[key] = string.join( ['\\', self.data[key]], '' )
 		
 		if len( self.data ) > 0:
 			# Construct the data
@@ -208,11 +208,11 @@ class _Record:
 		self.changed = False
 
 class _db:
-	"A human-readable and fairly simple database system"
-	path = ""
-	mode = ""
+	'A human-readable and fairly simple database system'
+	path = ''
+	mode = ''
 	
-	def __init__( self, path, mode="DB_READ" ):
+	def __init__( self, path, mode=DB_READ ):
 		""" Create an towel-db database
 		Takes a path to a database directory tree as an argument"""
 		self.path = path
@@ -221,7 +221,7 @@ class _db:
 		# Make sure that the path exists
 		if not os.path.isdir( self.path ):
 			if self.mode != DB_CREATE:
-				raise DBNotFound, "No database exists"
+				raise DBNotFound, 'No database exists'
 			else:
 				self._create_db()
 		
@@ -230,20 +230,20 @@ class _db:
 			meta = self[_DB_META]
 		except( KeyError ):
 			if self.mode != DB_CREATE:
-				raise DBNotFound, "Not a valid database"
+				raise DBNotFound, 'Not a valid database'
 			else:
 				self._create_db()
 				del meta
 		
 		if int( self[_DB_META]['version'] ) != DB_VERSION:
-			raise DBVersionMismatch, "Database version mismatch"
+			raise DBVersionMismatch, 'Database version mismatch'
 
 	def _create_db( self ):
 		"""Create a database"""
 
 		# Check the mode
 		if self.mode != DB_CREATE:
-			raise DBWrongMode, "'Create' mode not set"
+			raise DBWrongMode, '"Create" mode not set'
 		
 		# Check if we need to create the directory
 		if not os.path.isdir( self.path ):
@@ -251,11 +251,11 @@ class _db:
 		
 		# Create the database meta file
 		meta = _Record( self.path, _DB_META, self.mode )
-		meta["version"] = str( DB_VERSION )
+		meta['version'] = str( DB_VERSION )
 		meta.sync()
 		
 	def __str__( self ):
-		return string.join( ["towel-db database at", self.path] )
+		return string.join( ['towel-db database at', self.path] )
 
 	def __len__( self ):
 		return len( os.listdir( self.path ))
@@ -277,13 +277,13 @@ class _db:
 	
 	def __setitem__( self, key, value ):
 			if not type( key ) == str:
-				raise TypeError, "Key must be a string"
+				raise TypeError, 'Key must be a string'
 			
 			if key in DB_RESERVED:
-				raise DBError, "Requested key is reserved"
+				raise DBError, 'Requested key is reserved'
 			
 			if self.mode == DB_READ:
-				raise DBWrongMode, "Database opened read-only"
+				raise DBWrongMode, 'Database opened read-only'
 			
 			# Assign
 			if isinstance( value, _Record ):
@@ -294,18 +294,18 @@ class _db:
 				record = _Record( self.path, key, self.mode )
 				record.sync()
 			else:
-				raise TypeError, "Value must be a record (for now)"
+				raise TypeError, 'Value must be a record (for now)'
 
 	def __delitem__( self, key ):
 		if self.mode == DB_READ:
-			raise DBWrongMode, "Database opened read-only"
+			raise DBWrongMode, 'Database opened read-only'
 			
 		os.remove( os.path.join( self.path, key ))
 		
 	def create( self, key ):
-		"Create an empty new database record.  Takes a key string"
+		'Create an empty new database record.  Takes a key string'
 		if not type( key ) == str:
-			raise TypeError, "Key must be a string"
+			raise TypeError, 'Key must be a string'
 			
 		record = _Record( self.path, key, self.mode )
 		record.sync()
