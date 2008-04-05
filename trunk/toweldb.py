@@ -1,5 +1,5 @@
 # towel-db - A human readable database system.
-# Copyright (C) 2008  Andrew Aldridge <i80and@gmail.com>
+# Copyright (C) 2008  Andrew <i80and@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +21,13 @@ import __builtin__
 _open = __builtin__.open
 
 # Version of the database
-VERSION = 0
+DB_VERSION = 0
 
 # Reserved record names
 _DB_META = "_db"
 DB_RESERVED = [_DB_META]
+
+# 
 
 # Database open flags
 DB_READ = "r"
@@ -94,10 +96,12 @@ class _Record:
 		# Make sure the type is right
 		if not type( key ) == type( value ) == str:
 			raise TypeError, "Key and value must both be strings (for now)"
+			
 		if not self.changed:
 			# Record has chanegd; OK to sync
 			self.changed = True
 		
+		# Store the data
 		self.data[key] = value
 		
 	def __delitem__( self, key ):
@@ -120,7 +124,6 @@ class _Record:
 
 		current_column = ""
 
-		# FIXME: Allow for escaping "%%"
 		# Parse the data
 		for line in data.splitlines( ):
 			if line[0:2] == '%%':
@@ -136,7 +139,11 @@ class _Record:
 			# Iterate through all but the last line
 			for line_index in xrange( len( self.data[field] ) - 1 ):
 				self.data[field].insert( line_index+1, '\n' )
-			self.data[field] = string.join( self.data[field], "" )
+			# Clean out escaping
+			if self.data[field][0][0] == '\\':
+				self.data[field][0] = self.data[field][0][1:]
+			# Finish
+			self.data[field] = string.join( self.data[field], '' )
 
 	def change_key( self, key, clear=True ):
 		"""Mutator function to change the record key.
@@ -162,15 +169,23 @@ class _Record:
 
 	def sync( self ):
 		data_t = []
-		data = ""
+		final_data = ""
 		
 		record_path = os.path.join( self.path, self.key )
 
 		# Open the file
 		datafile = _open( record_path, "w" )
 
-		if len( self.data ):
-
+		# Escape dangerous stuff
+		for key in self.data:
+			if self.data[key][0:2] == "%%":
+				self.data[key] = string.join( ['\\', self.data[key]], "" )
+			
+			# Escape the escape char
+			elif self.data[key][0] == "\\":
+				self.data[key] = string.join( ['\\', self.data[key]], "" )
+		
+		if len( self.data ) > 0:
 			# Construct the data
 			for field in self.data.keys():
 				data_t.append( '%%' )
@@ -181,11 +196,10 @@ class _Record:
 
 			# Join and clean the data
 			data_t.pop()
-			data = string.join( data_t, "" )
+			final_data = string.join( data_t, "" )
 			
-
 		# Write the data
-		datafile.write( data )
+		datafile.write( final_data )
 
 		# Close the file
 		datafile.close( )
@@ -221,7 +235,7 @@ class _db:
 				self._create_db()
 				del meta
 		
-		if int( self[_DB_META]['version'] ) != VERSION:
+		if int( self[_DB_META]['version'] ) != DB_VERSION:
 			raise DBVersionMismatch, "Database version mismatch"
 
 	def _create_db( self ):
@@ -237,7 +251,7 @@ class _db:
 		
 		# Create the database meta file
 		meta = _Record( self.path, _DB_META, self.mode )
-		meta["version"] = str( VERSION )
+		meta["version"] = str( DB_VERSION )
 		meta.sync()
 		
 	def __str__( self ):
