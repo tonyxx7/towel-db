@@ -207,7 +207,7 @@ class _Record:
 		# No changes to be flushed now
 		self.changed = False
 
-class _db:
+class Db:
 	'A human-readable and fairly simple database system'
 	path = ''
 	mode = ''
@@ -233,7 +233,6 @@ class _db:
 				raise DBNotFound, 'Not a valid database'
 			else:
 				self._create_db()
-				del meta
 		
 		if int( self[_DB_META]['version'] ) != DB_VERSION:
 			raise DBVersionMismatch, 'Database version mismatch'
@@ -258,7 +257,7 @@ class _db:
 		return string.join( ['towel-db database at', self.path] )
 
 	def __len__( self ):
-		return len( os.listdir( self.path ))
+		return ( len( os.listdir( self.path )) - len( DB_RESERVED ))
 
 	def __getitem__( self, key ):
 		"""Get a record from the key given"""
@@ -273,7 +272,16 @@ class _db:
 		return record
 		
 	def __iter__( self ):
-		return iter( os.listdir( self.path ))
+		contents = os.listdir( self.path )
+		
+		# Remove private records
+		for rec_i in xrange( len( contents ) - 1 ):
+			if contents[rec_i] in DB_RESERVED:
+				del contents[rec_i]
+		
+		# Return an iterator through the list
+		return iter( contents )
+			
 	
 	def __setitem__( self, key, value ):
 			if not type( key ) == str:
@@ -302,13 +310,41 @@ class _db:
 			
 		os.remove( os.path.join( self.path, key ))
 		
-	def create( self, key ):
+	def create_key( self, key ):
 		'Create an empty new database record.  Takes a key string'
 		if not type( key ) == str:
 			raise TypeError, 'Key must be a string'
 			
 		record = _Record( self.path, key, self.mode )
 		record.sync()
+	
+	def drop( self ):
+		if self.mode != DB_CREATE:
+			raise DBWrongMode, 'Database deletion requires "Create" open mode'
+			
+		# We need all the records, including the private ones
+		records = os.listdir( self.path )
+		
+		# Delete the records
+		for rec in records:
+			os.remove( os.path.join( self.path, rec ))
+		
+		# Wrap everything up
+		os.rmdir( self.path )
+		del self
 
 def open( path, mode=DB_READ ):
-	return _db( path, mode )
+	return Db( path, mode )
+
+def db_exists( path ):
+	exists = False
+	
+	if os.path.isdir( path ):
+		try:
+			temp_db = open( path, mode=DB_READ )
+			temp_db[_DB_META]
+			exists = True
+		except( KeyError, DBNotFound ):
+			pass
+	
+	return exists
