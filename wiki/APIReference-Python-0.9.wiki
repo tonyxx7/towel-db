@@ -3,7 +3,7 @@
 
 =Introduction=
 The API is extremely simple, as expected from such a simple database library.  Describes version 0.9.
-As 0.9.x is still under development, this page is deemed unstable and may change at my descretion.
+As 0.9.x is still under development, this page is deemed unstable and may change at my discretion.
 
 =Objects=
 ==Global==
