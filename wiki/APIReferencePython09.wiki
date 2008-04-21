@@ -33,7 +33,7 @@ The mode given to open() can be:
   * DBWrongMode - A requested operation isn't compatible with the requested database open mode.
   * DBNotFound - The requested database couldn't be found.
 
-==Database==
+==Database - Db==
 ===Functions===
 {{{
 create_key( key )
@@ -66,7 +66,8 @@ for key in db:
 print len( db )
 }}}
 
-==Record==
+==Record _Record==
+Please to not create _Record objects yourself.  They will be returned as needed by a Db instance.
 ===Functions===
 {{{
 change_key( key, clear=True )
