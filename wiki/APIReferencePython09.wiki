@@ -41,7 +41,7 @@ Record keys can be checked for validity with these constants:
   * DBVersionMismatch - Version of the database being opened is different from that of the library.
   * DBWrongMode - A requested operation isn't compatible with the requested database open mode.
   * DBNotFound - The requested database couldn't be found.
-  * DbInvalidKey - A key that was too long, reserved, or had illegal characters was used.
+  * DBInvalidKey - A key that was too long, reserved, or had illegal characters was used.
 
 ==Database - Db==
 ===Functions===
