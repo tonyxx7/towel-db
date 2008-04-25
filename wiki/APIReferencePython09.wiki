@@ -9,6 +9,11 @@ As 0.9.x is still under development, this page is deemed unstable and may change
 ==Global==
 ===Functions===
 {{{
+is_key_valid( key )
+}}}
+Check if a record key _key_ is valid.
+
+{{{
 db_exists( path )
 }}}
 Check if the database at _path_ exists and is a valid database.  Returns a boolean.
@@ -20,25 +25,30 @@ Open a database at _path_ with _mode_ permissions.
 
 ===Constants===
  * DB_VERSION - Version of the database implemented.
- * DB_RESERVED - Reserved record names
 
 The mode given to open() can be:
  * DB_READ - Read-only
  * DB_WRITE - Read/Write
  * DB_CREATE - Read/Write, create if needed
 
+Record keys can be checked for validity with these constants:
+ * KEY_MAX_LEN - The maximum length of a record key
+ * KEY_DANGEROUS - A list of prohibited characters
+ * DB_RESERVED - Reserved record names
+
 ===Errors===
  * DBError - Base class for towel-db errors
   * DBVersionMismatch - Version of the database being opened is different from that of the library.
   * DBWrongMode - A requested operation isn't compatible with the requested database open mode.
   * DBNotFound - The requested database couldn't be found.
+  * DbInvalidKey - A key that was too long, reserved, or had illegal characters was used.
 
 ==Database - Db==
 ===Functions===
 {{{
 create_key( key )
 }}}
-Create a new record with a key of _key_.
+Create a new record with a key of _key_.  _key_ may be a string or an integer.
 
 {{{
 drop()
@@ -47,8 +57,9 @@ Delete the database.
 
 ===Usage===
 {{{
-# Record creation
-db.create( 'foo' )
+# Record creation.  db.create_key() is preferred over assignment of None
+db.create_key( 'foo' )
+db.create_key( 42 )
 db['bar'] = None
 
 # Record copying
@@ -89,11 +100,17 @@ sync()
 }}}
 Flush all changes to disk.
 
+{{{
+keys()
+}}}
+Return a list of field keys within the record.
+
 ===Usage===
 {{{
 # Assignment
 record['name'] = 'foo'
 record['summary'] = 'bar'
+record[3] = 'foobar'
 
 # Field copying
 record['bah'] = record['name']
@@ -111,4 +128,7 @@ for key in record:
 
 # Number of fields
 print len( record )
+
+# List of keys
+print db.keys
 }}}
