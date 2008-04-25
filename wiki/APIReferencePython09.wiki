@@ -41,9 +41,12 @@ Record keys can be checked for validity with these constants:
   * DBVersionMismatch - Version of the database being opened is different from that of the library.
   * DBWrongMode - A requested operation isn't compatible with the requested database open mode.
   * DBNotFound - The requested database couldn't be found.
-  * DBInvalidKey - A key that was too long, reserved, or had illegal characters was used.
+  * DBInvalidKey - A key that was too long, reserved, or contained illegal characters was used.
 
-==Database - Db==
+==Database==
+{{{
+class Db()
+}}}
 ===Functions===
 {{{
 create_key( key )
@@ -77,8 +80,11 @@ for key in db:
 print len( db )
 }}}
 
-==Record _Record==
-Please to not create _Record objects yourself.  They will be returned as needed by a Db instance.
+==Record==
+{{{
+class _Record()
+}}}
+Please do not create record objects manually.  They are returned as needed by database functions.
 ===Functions===
 {{{
 change_key( key, clear=True )
