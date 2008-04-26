@@ -304,29 +304,8 @@ class Db:
 		return record
 		
 	def __iter__( self ):
-		is_int = True
-		records = []
-		contents = os.listdir( self.path )
-		
-		for rec in contents:
-			# Don't copy reserved records
-			if rec in DB_RESERVED:
-				continue
-			
-			# Turn records as needed into integers
-			is_int = True
-			for char in rec:
-				if not char in string.digits:
-					is_int = False
-			
-			if is_int:
-				rec = int( rec )
-			
-			# Copy to the list of records
-			records.append( rec )
-		
-		# Return an iterator through the list
-		return iter( records )
+		# Return an iterator for the keys
+		return iter( self.keys( ))
 	
 	def __setitem__( self, key, value ):
 		key_type = type( key )
@@ -419,6 +398,30 @@ class Db:
 		# Wrap everything up
 		os.rmdir( self.path )
 		del self
+		
+	def keys( self ):
+		is_int = True
+		keys = []
+		contents = os.listdir( self.path )
+		
+		for key in contents:
+			# Don't copy reserved records
+			if key in DB_RESERVED:
+				continue
+			
+			# Turn records as needed into integers
+			is_int = True
+			for char in key:
+				if not char in string.digits:
+					is_int = False
+			
+			if is_int:
+				key = int( key )
+			
+			# Copy to the list of records
+			keys.append( key )
+			
+		return keys
 
 def open( path, mode=DB_READ ):
 	return Db( path, mode )
