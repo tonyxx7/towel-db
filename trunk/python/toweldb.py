@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import string
 import __builtin__
 
 _open = __builtin__.open
@@ -303,16 +304,29 @@ class Db:
 		return record
 		
 	def __iter__( self ):
+		is_int = True
+		records = []
 		contents = os.listdir( self.path )
 		
-		# Remove private records
-		for rec_i in xrange( len( contents ) - 1 ):
-			if contents[rec_i] in DB_RESERVED:
-				del contents[rec_i]
+		for rec in contents:
+			# Don't copy reserved records
+			if rec in DB_RESERVED:
+				continue
+			
+			# Turn records as needed into integers
+			is_int = True
+			for char in rec:
+				if not char in string.digits:
+					is_int = False
+			
+			if is_int:
+				rec = int( rec )
+			
+			# Copy to the list of records
+			records.append( rec )
 		
 		# Return an iterator through the list
-		return iter( contents )
-			
+		return iter( records )
 	
 	def __setitem__( self, key, value ):
 		key_type = type( key )
