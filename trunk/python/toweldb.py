@@ -102,6 +102,33 @@ class _Record( ):
 			self._read( recfile.read( ))
 			recfile.close()
 
+	def _read( self, data ):
+		'''Read the database record.
+		Takes a data string as an argument'''
+
+		current_column = ""
+
+		# Parse the data
+		for line in data.splitlines( ):
+			if line[0:2] == '%%':
+				# Header line
+				current_column = line[2:]
+				self.data[current_column] = []
+			else:
+				# Data line
+				self.data[current_column].append( line )
+
+		# Concatenate data lines
+		for field in self.keys():
+			# Iterate through all but the last line
+			for line_index in xrange( len( self.data[field] ) - 1 ):
+				self.data[field].insert( line_index+1, '\n' )
+			# Clean out escaping
+			if self.data[field][0][0] == '\\':
+				self.data[field][0] = self.data[field][0][1:]
+			# Finish
+			self.data[field] = ''.join( self.data[field] )
+
 	def __iter__( self ):
 		return iter( self.data )
 
@@ -134,36 +161,12 @@ class _Record( ):
 		else:
 			raise KeyError, 'Given key is not in record'
 
+	def __repr__( self ):
+		return repr( self.data )
+
 	def __del__( self ):
 		if self.changed:
 			self.sync()
-
-	def _read( self, data ):
-		'''Read the database record.
-		Takes a data string as an argument'''
-
-		current_column = ""
-
-		# Parse the data
-		for line in data.splitlines( ):
-			if line[0:2] == '%%':
-				# Header line
-				current_column = line[2:]
-				self.data[current_column] = []
-			else:
-				# Data line
-				self.data[current_column].append( line )
-
-		# Concatenate data lines
-		for field in self.keys():
-			# Iterate through all but the last line
-			for line_index in xrange( len( self.data[field] ) - 1 ):
-				self.data[field].insert( line_index+1, '\n' )
-			# Clean out escaping
-			if self.data[field][0][0] == '\\':
-				self.data[field][0] = self.data[field][0][1:]
-			# Finish
-			self.data[field] = ''.join( self.data[field] )
 
 	def change_key( self, key, clear=True ):
 		'''Mutator function to change the record key.
@@ -278,7 +281,7 @@ class Db:
 		meta = _Record( self.path, _DB_META, self.mode )
 		meta['version'] = str( DB_VERSION )
 		meta.sync()
-		
+	
 	def __str__( self ):
 		return 'towel-db database at' + self.path
 
@@ -356,6 +359,20 @@ class Db:
 			key = str( key )
 		
 		os.remove( os.path.join( self.path, key ))
+	
+	def __repr__( self ):
+		repr = []
+		
+		for key in self.keys():
+			repr.append( '{' )
+			repr.append( str( key ))
+			repr.append( ': ' )
+			repr.append( str( self[key] ))
+			repr.append( '}, ' )
+		
+		repr = ''.join( repr )
+		
+		return repr
 	
 	def append( self ):
 		'Add a new record that\'s 1 plus the current largest record key.'
