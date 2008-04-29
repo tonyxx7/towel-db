@@ -19,7 +19,7 @@ db_exists( path )
 Check if the database at _path_ exists and is a valid database.  Returns a boolean.
 
 {{{
-def open( path, mode=DB_READ )
+open( path, mode=DB_READ )
 }}}
 Open a database at _path_ with _mode_ permissions.
 
@@ -36,12 +36,13 @@ Record keys can be checked for validity with these constants:
  * KEY_DANGEROUS - A list of prohibited characters
  * DB_RESERVED - Reserved record names
 
-===Errors===
+===Exceptions===
  * DBError - Base class for towel-db errors
   * DBVersionMismatch - Version of the database being opened is different from that of the library.
   * DBWrongMode - A requested operation isn't compatible with the requested database open mode.
   * DBNotFound - The requested database couldn't be found.
   * DBInvalidKey - A key that was too long, reserved, or contained illegal characters was used.
+  * DVNoIntegerRecords - The database has no records with an integer key.
 
 ==Database==
 {{{
@@ -49,14 +50,35 @@ class Db()
 }}}
 ===Functions===
 {{{
-create_key( key )
+Db.append()
 }}}
-Create a new record with a key of _key_.  _key_ may be a string or an integer.
+Create and return a new integer record with an index that is one larger than the current largest integer record.
 
 {{{
-drop()
+Db.create_key( key )
+}}}
+Create and return a new record with a key of _key_.  _key_ may be a string or an integer.
+
+{{{
+Db.drop()
 }}}
 Delete the database.
+
+{{{
+Db.keys( force_sort=False )
+}}}
+Return the list of record keys in the database.  By default, it will only sort the list if there is at least one integer key in it, but you can force 
+sorting by setting _force_sort_ to True.
+
+{{{
+Db.last()
+}}}
+Return the key of the last integer record in the database.  Return _-1_ if there are no integer records.
+
+{{{
+Db.values()
+}}}
+Return a list of the records in the database.
 
 ===Usage===
 {{{
