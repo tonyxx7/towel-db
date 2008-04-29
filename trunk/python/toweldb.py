@@ -52,6 +52,9 @@ class DBNotFound( DBError ):
 class DBInvalidKey( DBError ):
 	'Key will cause cross-filesystem issues'
 
+class DBNoIntegerRecords( DBError ):
+	'Database has no integer records'
+
 def is_key_valid( key ):
 	'Check if a given key is probably safe'
 	# Make sure the key is a string
@@ -234,7 +237,7 @@ class Db:
 	'A human-readable and fairly simple database system'
 	path = ''
 	mode = ''
-	
+		
 	def __init__( self, path, mode=DB_READ ):
 		'''Create an towel-db database
 		Takes a path to a database directory tree as an argument'''
@@ -256,7 +259,6 @@ class Db:
 				raise DBNotFound, 'Not a valid database'
 			else:
 				self._create_db()
-		
 		
 		if int( self[_DB_META]['version'] ) != DB_VERSION:
 			raise DBVersionMismatch, 'Database version mismatch'
@@ -293,6 +295,10 @@ class Db:
 		# If it's an integer, get a string
 		if type( key ) is int:
 			key = str( key )
+			
+			# If it's -1, then get the last numerical record
+			if key == '-1':
+				return self[self.last()]
 		
 		# Make sure the key exists
 		if not( os.path.exists( os.path.join( self.path, key ))):
@@ -350,7 +356,16 @@ class Db:
 			key = str( key )
 		
 		os.remove( os.path.join( self.path, key ))
+	
+	def append( self ):
+		'Add a new record that\'s 1 plus the current largest record key.'
+		key = self.last()
 		
+		if key == -1:
+			raise DBNoIntegerRecords, DBNoIntegerRecords.__doc__
+		else:
+			return self.create_key( key + 1 )
+	
 	def create_key( self, key ):
 		'Create an empty new database record.  Takes a key string'
 		
@@ -399,8 +414,12 @@ class Db:
 		os.rmdir( self.path )
 		del self
 		
-	def keys( self ):
+	def keys( self, force_sort=False ):
+		''''Get the list of keys in a database.  Accepts an optional boolean
+		for if it should force sorting or not.  By default, it will only sort
+		if there is at least one integer key'''
 		is_int = True
+		has_int = False
 		keys = []
 		contents = os.listdir( self.path )
 		
@@ -414,14 +433,48 @@ class Db:
 			for char in key:
 				if not char in string.digits:
 					is_int = False
+					break
 			
 			if is_int:
 				key = int( key )
+				
+				# An integer is present; we need to sort this puppy
+				if not has_int:
+					has_int = True
 			
 			# Copy to the list of records
 			keys.append( key )
+
+		# Sort the results if needed
+		if force_sort or has_int:
+			keys.sort()
 			
-		return keys
+		return keys 
+
+	def last( self ):
+		'''Return the last numerical key in the database.  If no numerical key
+		is found, return -1'''
+		last_key = ''
+		
+		for key in self.keys():
+			for char in str(key):
+				if char not in string.digits:
+					break
+			last_key = key
+		
+		if last_key != '':
+			return last_key
+		else:
+			return -1
+		
+	def values( self ):
+		'Return a list of records within the database'
+		values = []
+		
+		for key in self.keys():
+			values.append( self[key] )
+		
+		return values
 
 def open( path, mode=DB_READ ):
 	return Db( path, mode )
