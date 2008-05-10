@@ -17,20 +17,52 @@
 
 #include "toweldb.h"
 
+bool
+toweldb_is_record_real( char* key )
+{
+	struct stat file_info;
+	
+	/* First let's try getting the file information.  I can't imagine why it
+	 * would fail, but if it does, we don't want it to be considered valid */
+	if( stat( key, &file_info ))
+	{
+		return false;
+	}
+	
+	/* Now we check if it's a real file or not, and if it's an internally
+	 * reserved record */
+	if( S_ISREG( file_info.st_mode )	\
+		&& strcmp( key, TOWELDB_META ))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 unsigned int
 toweldb_get_num_recs( toweldb_db* db )
 {
+	DIR* db_dir = NULL;
+	struct dirent* dir_entry = NULL;
 	unsigned int n_recs = 0;
 
-	/* We first need to rewind the database directory stream to the start */
-	rewinddir( db->db_dir );
+	/* Open the database directory stream */
+	db_dir = opendir( db->path );
 	
 	/* Now we just loop through the database keys until we hit NULL */
-	while( toweldb_get_next_key( db ) != NULL )
+	while(( dir_entry = readdir( db_dir )) != NULL )
 	{
-		n_recs++;
+		if( toweldb_is_record_real( dir_entry->d_name ))
+		{
+			n_recs++;
+		}
 	}
 	
+	/* Wrap it up */
+	closedir( db_dir );
 	return n_recs;
 }
 
@@ -55,9 +87,7 @@ toweldb_get_next_key( toweldb_db* db )
 		
 		/* Now, if the item in question is reserved internally or pointless,
 		 * go to the next item in the directory stream */
-		if( strcmp( dir_entry->d_name, "." )		\
-			&& strcmp( dir_entry->d_name, ".." )	\
-			&& strcmp( dir_entry->d_name, TOWELDB_META ))
+		if( toweldb_is_record_real( dir_entry->d_name ))
 		{
 			found = 1;
 		}

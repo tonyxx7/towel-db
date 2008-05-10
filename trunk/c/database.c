@@ -20,9 +20,21 @@
 int
 main()
 {
+	/* This is all testing garbage */
 	toweldb_db* db = NULL;
+	char* temp = NULL;
+	int i = 0;
+	
 	db = toweldb_open( "/home/andrew/bah", 'c' );
 	printf( "%u\n", toweldb_get_num_recs( db ));
+	
+	for( i = 0; i < 5; i++ )
+	{
+		temp = toweldb_get_next_key( db );
+		if( temp != NULL )
+			printf( "%s\n", temp );
+	}
+	
 	toweldb_close( db );
 	
 	return 0;
@@ -66,6 +78,9 @@ toweldb_open( char* path, const char mode )
 	{
 		db->max_key_len = fs_info.f_namemax;
 	}
+	
+	/* Last but not least, we switch to the path */
+	chdir( path );
 	
 	return db;
 }
