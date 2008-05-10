@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
@@ -78,10 +79,10 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
+inline bool toweldb_is_record_real( char* key );
+	/* Check to see if a key is worth returning as a record key or not */
 unsigned int toweldb_get_num_recs( toweldb_db* db );
-	/* Get the number of records in the database.  FIXME: This will rewind
-	 * to the start of the database, and mess up toweldb_get_next_key in some
-	 * cases */
+	/* Get the number of records in the database. */
 char* toweldb_get_next_key( toweldb_db* db );
 	/* Get the next key in the database.  This is a wrapper around the POSIX
 	 * readdir that skips entries that the programmer doesn't need.  It will
