@@ -20,66 +20,73 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
+#include <dirent.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 
 /* Version of the database implemented */
 #define TOWELDB_DB_VERSION 0
 
+/* Various utility macros */
+#define TOWELDB_MAX_KEY_LEN 255
+#define TOWELDB_META "_db"
+
 /* Errors */
-typedef enum
+typedef char toweldb_err;
+enum _toweldb_err
 {
-	toweldb_err_noerror = 0,
-	toweldb_err_nodb,
-	toweldb_err_versionmismatch,
-	toweldb_err_wrongmode
-} toweldb_err;
+	toweldb_err_noerror = 0,		/* Everything's just dandy */
+	toweldb_err_fs_limits,			/* The filesystem is limiting us somehow */
+	toweldb_err_versionmismatch,	/* The database is of a different version */
+};
+
+/* Record write cache entry */
+typedef struct
+{
+	char* key;
+	char* value;
+} toweldb_tuple;
 
 /* Database */
 typedef struct
 {
+	DIR* db_dir;
+	toweldb_tuple* cached_writes;
 	char* path;
 	char mode;
+	toweldb_err error;
+	char max_key_len;
 } toweldb_db;
 
 /* Record */
 typedef struct
 {
-	bool changed;
-	bool exists;
-	char mode;
-	char* key;
 	toweldb_db* parent;
+	char* key;
 	char** data_keys;
 	char** data_values;
 } toweldb_rec;
 
 /* Database stuff */
-toweldb_err toweldb_create_db ( char* path, toweldb_db* db );
-/* Create a database */
-
-toweldb_err toweldb_open ( char* path, toweldb_db* db );
-/* Open an existing database */
-
-toweldb_err toweldb_get_rec ( toweldb_db* db,
-								toweldb_rec* rec,
-								char* key );
-/* Get a record within a toweldb database */
-
-toweldb_err toweldb_create_rec ( toweldb_db* db, char* key );
-/* Create a new record at key within the database db */
-
-toweldb_err toweldb_del_rec( toweldb_db* db, char* key );
-/* Delete a record within database db */
-
-/* Record stuff */
-toweldb_err toweldb_get_field ( toweldb_rec* rec,
-								char* field,
-								unsigned int len,
-								char* data );
-/* Get the value of rec[field] and put len bytes of it in data */
-
-toweldb_err toweldb_sync( toweldb_rec* rec );
-/* Write the data in the record rec to the disk */
+toweldb_db* toweldb_open( char* path, const char mode );
+	/* Open a database located at path.  If mode is 'c', create it if needed */
+toweldb_err toweldb_drop( toweldb_db* db );
+	/* Delete the database.  WARNING: BROKEN */
+void toweldb_close( toweldb_db* db );
+	/* Close a database and free the memory storing it. */
+	
+/* Record functions */
+unsigned int toweldb_get_num_recs( toweldb_db* db );
+	/* Get the number of records in the database.  FIXME: This will rewind
+	 * to the start of the database, and mess up toweldb_get_next_key in some
+	 * cases */
+char* toweldb_get_next_key( toweldb_db* db );
+	/* Get the next key in the database.  This is a wrapper around the POSIX
+	 * readdir that skips entries that the programmer doesn't need.  It will
+	 * return NULL and rewind if it hits the last item in the directory. */
+toweldb_err toweldb_create_rec( toweldb_db* db, const char* key );
+	/* Create a new record within the database with the given key. */
 
 #endif
