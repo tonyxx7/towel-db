@@ -34,12 +34,17 @@
 #define TOWELDB_MAX_KEY_LEN 255
 #define TOWELDB_META "_db"
 
+/* FIXME: This has to be changed for non-POSIX systems */
+#define TOWELDB_PATH_JOIN '/'
+
 /* Errors */
 typedef char toweldb_err;
 enum _toweldb_err
 {
 	toweldb_err_noerror = 0,		/* Everything's just dandy */
-	toweldb_err_fs_limits,			/* The filesystem is limiting us somehow */
+	toweldb_err_record_exists,		/* The record already exists */
+	toweldb_err_write_error,
+	toweldb_err_key_too_long,
 	toweldb_err_versionmismatch,	/* The database is of a different version */
 };
 
@@ -71,7 +76,7 @@ typedef struct
 } toweldb_rec;
 
 /* Database stuff */
-toweldb_db* toweldb_open( char* path, const char mode );
+toweldb_db* toweldb_open( const char* path, const char mode );
 	/* Open a database located at path.  If mode is 'c', create it if needed */
 toweldb_err toweldb_drop( toweldb_db* db );
 	/* Delete the database.  WARNING: BROKEN */
@@ -79,7 +84,7 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
-inline bool toweldb_is_record_real( char* key );
+bool toweldb_is_record_real( toweldb_db* db, const char* key );
 	/* Check to see if a key is worth returning as a record key or not */
 unsigned int toweldb_get_num_recs( toweldb_db* db );
 	/* Get the number of records in the database. */
@@ -89,5 +94,7 @@ char* toweldb_get_next_key( toweldb_db* db );
 	 * return NULL and rewind if it hits the last item in the directory. */
 toweldb_err toweldb_create_rec( toweldb_db* db, const char* key );
 	/* Create a new record within the database with the given key. */
+toweldb_err toweldb_remove_rec( toweldb_db* db, const char* key );
+	/* Remove the record with name key from the database */
 
 #endif
