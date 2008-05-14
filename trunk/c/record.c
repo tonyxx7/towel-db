@@ -18,16 +18,28 @@
 #include "toweldb.h"
 
 bool
-toweldb_is_record_real( char* key )
+toweldb_is_record_real( toweldb_db* db, const char* key )
 {
 	struct stat file_info;
 	
+	/* We'll need to concatenate the database path with the key.  FIXME: This
+	 * would sometimes need to be done several times for one operation with the
+	 * current system.  This needs some work */
+	char* path = malloc( sizeof( char ) * \
+		( strlen( db->path ) + strlen( key ) + 1 ));
+	strcpy( path, db->path );
+	strcat( path, key );
+	
 	/* First let's try getting the file information.  I can't imagine why it
 	 * would fail, but if it does, we don't want it to be considered valid */
-	if( stat( key, &file_info ))
+	if( stat( path, &file_info ))
 	{
+		free( path );
 		return false;
 	}
+	
+	/* We don't need the path anymore */
+	free( path );
 	
 	/* Now we check if it's a real file or not, and if it's an internally
 	 * reserved record */
@@ -55,7 +67,7 @@ toweldb_get_num_recs( toweldb_db* db )
 	/* Now we just loop through the database keys until we hit NULL */
 	while(( dir_entry = readdir( db_dir )) != NULL )
 	{
-		if( toweldb_is_record_real( dir_entry->d_name ))
+		if( toweldb_is_record_real( db, dir_entry->d_name ))
 		{
 			n_recs++;
 		}
@@ -87,7 +99,7 @@ toweldb_get_next_key( toweldb_db* db )
 		
 		/* Now, if the item in question is reserved internally or pointless,
 		 * go to the next item in the directory stream */
-		if( toweldb_is_record_real( dir_entry->d_name ))
+		if( toweldb_is_record_real( db, dir_entry->d_name ))
 		{
 			found = 1;
 		}
@@ -97,9 +109,33 @@ toweldb_get_next_key( toweldb_db* db )
 	return dir_entry->d_name;
 }
 
-toweldb_err toweldb_create_rec( toweldb_db* db, const char* key )
+toweldb_err
+toweldb_create_rec( toweldb_db* db, const char* key )
 {
+	FILE* rec = NULL;
 	
+	/* Let's first check if the key is too long */
+	if( strlen( key ) > db->max_key_len )
+	{
+		return toweldb_err_key_too_long;
+	}
 	
-	return toweldb_err_noerror;	
+	if(( rec = fopen( key, "w" )) != NULL )
+	{
+		fclose( rec );
+	}
+	else
+	{
+		return toweldb_err_write_error;
+	}
+	
+	return toweldb_err_noerror;
+}
+
+toweldb_err
+toweldb_remove_rec( toweldb_db* db, const char* key )
+{
+	remove( key );
+	
+	return toweldb_err_noerror;
 }

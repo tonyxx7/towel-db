@@ -26,7 +26,7 @@ main()
 	int i = 0;
 	
 	db = toweldb_open( "/home/andrew/bah", 'c' );
-	printf( "%u\n", toweldb_get_num_recs( db ));
+	printf( "Number of records: %u\n", toweldb_get_num_recs( db ));
 	
 	for( i = 0; i < 5; i++ )
 	{
@@ -34,6 +34,8 @@ main()
 		if( temp != NULL )
 			printf( "%s\n", temp );
 	}
+	toweldb_create_rec( db, "foo" );
+	printf( "%s\n", db->path );
 	
 	toweldb_close( db );
 	
@@ -41,7 +43,7 @@ main()
 }
 
 toweldb_db*
-toweldb_open( char* path, const char mode )
+toweldb_open( const char* path, const char mode )
 {	
 	/* Information about the filesystem */
 	struct stat path_info;
@@ -49,6 +51,10 @@ toweldb_open( char* path, const char mode )
 	
 	/* The actual database pointer */
 	toweldb_db* db = NULL;
+	
+	/* The path string */
+	char* path_final = NULL;
+	unsigned int i = 0;
 	
 	/* First let's make sure that the path given is a valid directory */
 	stat( path, &path_info );
@@ -68,19 +74,42 @@ toweldb_open( char* path, const char mode )
 	/* Let's allocate the database */
 	db = malloc( sizeof( toweldb_db ));
 	db->mode = mode;
-	db->path = path;
 	db->db_dir = opendir( path );
 	db->error = toweldb_err_noerror;
+	/* Give the database a pointer to the path string.  If the last character is
+	 * the path join character, just copy it on over.  If not, then we need to
+	 * append it ourselves */
+	if( path[strlen( path )-1] != TOWELDB_PATH_JOIN )
+	{
+		/* Allocate the memory needed to hold the path.  Add two for the path
+		 * join character and for the ending null character */
+		path_final = malloc( sizeof( char ) * \
+			( strlen( path ) + 1 ));
+		
+		/* Copy the string manually and add the path join character */
+		while( path[i] != '\0' )
+		{
+			path_final[i] = path[i];
+			i++;
+		}
+		path_final[i] = TOWELDB_PATH_JOIN;
+		path_final[i+1] = '\0';
+	}
+	else
+	{
+		/* Just copy the path string right over */
+		path_final = malloc( sizeof( char ) * strlen( path ));
+		strcpy( path_final, path );
+	}
+	db->path = path_final;
 	
-	/* Now we need to warn the developer if the filesystem used is limiting */
+	/* Now we need to set some flags if the filesystem is limiting */
 	statvfs( path, &fs_info );
 	if( fs_info.f_namemax < TOWELDB_MAX_KEY_LEN )
 	{
 		db->max_key_len = fs_info.f_namemax;
 	}
-	
-	/* Last but not least, we switch to the path */
-	chdir( path );
+	/* TODO: Check if the FS is read-only */
 	
 	return db;
 }
@@ -102,5 +131,6 @@ void
 toweldb_close( toweldb_db* db )
 {
 	closedir( db->db_dir );
+	free( db->path );
 	free( db );
 }
