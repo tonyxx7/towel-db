@@ -17,6 +17,9 @@
 
 #include "toweldb.h"
 
+bool toweldb_is_record_real( toweldb_db* db, const char* key );
+	/* Check to see if a key is worth returning as a record key or not */
+
 bool
 toweldb_is_record_real( toweldb_db* db, const char* key )
 {
@@ -135,7 +138,12 @@ toweldb_create_rec( toweldb_db* db, const char* key )
 toweldb_err
 toweldb_remove_rec( toweldb_db* db, const char* key )
 {
-	remove( key );
-	
-	return toweldb_err_noerror;
+	if( remove( key ))
+	{
+		return toweldb_err_delete_error;
+	}
+	else
+	{
+		return toweldb_err_noerror;
+	}
 }

@@ -34,7 +34,7 @@ main()
 		if( temp != NULL )
 			printf( "%s\n", temp );
 	}
-	toweldb_create_rec( db, "foo" );
+	toweldb_remove_rec( db, "foo" );
 	printf( "%s\n", db->path );
 	
 	toweldb_close( db );

@@ -44,6 +44,7 @@ enum _toweldb_err
 	toweldb_err_noerror = 0,		/* Everything's just dandy */
 	toweldb_err_record_exists,		/* The record already exists */
 	toweldb_err_write_error,
+	toweldb_err_delete_error,
 	toweldb_err_key_too_long,
 	toweldb_err_versionmismatch,	/* The database is of a different version */
 };
@@ -84,8 +85,6 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
-bool toweldb_is_record_real( toweldb_db* db, const char* key );
-	/* Check to see if a key is worth returning as a record key or not */
 unsigned int toweldb_get_num_recs( toweldb_db* db );
 	/* Get the number of records in the database. */
 char* toweldb_get_next_key( toweldb_db* db );
