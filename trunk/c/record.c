@@ -20,18 +20,26 @@
 bool toweldb_is_record_real( toweldb_db* db, const char* key );
 	/* Check to see if a key is worth returning as a record key or not */
 
+char*
+toweldb_get_path( toweldb_db* db, const char* key )
+{
+	char* path = NULL;
+	
+	path = malloc( sizeof( char ) * \
+		( strlen( db->path ) + strlen( key ) + 1 ));
+	strcpy( path, db->path );
+	strcat( path, key );
+	
+	return path;
+}
+
 bool
 toweldb_is_record_real( toweldb_db* db, const char* key )
 {
 	struct stat file_info;
+	char* path = NULL;
 	
-	/* We'll need to concatenate the database path with the key.  FIXME: This
-	 * would sometimes need to be done several times for one operation with the
-	 * current system.  This needs some work */
-	char* path = malloc( sizeof( char ) * \
-		( strlen( db->path ) + strlen( key ) + 1 ));
-	strcpy( path, db->path );
-	strcat( path, key );
+	path = toweldb_get_path( db, key );
 	
 	/* First let's try getting the file information.  I can't imagine why it
 	 * would fail, but if it does, we don't want it to be considered valid */

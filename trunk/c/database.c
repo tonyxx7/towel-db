@@ -22,20 +22,21 @@ main()
 {
 	/* This is all testing garbage */
 	toweldb_db* db = NULL;
+	toweldb_rec* rec = NULL;
 	char* temp = NULL;
 	int i = 0;
 	
 	db = toweldb_open( "/home/andrew/bah", 'c' );
-	printf( "Number of records: %u\n", toweldb_get_num_recs( db ));
 	
-	for( i = 0; i < 5; i++ )
+	/*for( i = 0; i < 5; i++ )
 	{
 		temp = toweldb_get_next_key( db );
 		if( temp != NULL )
 			printf( "%s\n", temp );
-	}
-	toweldb_remove_rec( db, "foo" );
-	printf( "%s\n", db->path );
+	}*/
+	
+	rec = toweldb_read_rec( db, "foo" );
+	toweldb_free_rec( rec );
 	
 	toweldb_close( db );
 	
@@ -84,7 +85,7 @@ toweldb_open( const char* path, const char mode )
 		/* Allocate the memory needed to hold the path.  Add two for the path
 		 * join character and for the ending null character */
 		path_final = malloc( sizeof( char ) * \
-			( strlen( path ) + 1 ));
+			( strlen( path ) + 2 ));
 		
 		/* Copy the string manually and add the path join character */
 		while( path[i] != '\0' )

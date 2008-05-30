@@ -49,18 +49,18 @@ enum _toweldb_err
 	toweldb_err_versionmismatch,	/* The database is of a different version */
 };
 
-/* Record write cache entry */
-typedef struct
+/* Linked list of record fields */
+typedef struct _toweldb_tuple
 {
 	char* key;
 	char* value;
-} toweldb_tuple;
+	struct _toweldb_tuple* next;
+} toweldb_field_node;
 
 /* Database */
 typedef struct
 {
 	DIR* db_dir;
-	toweldb_tuple* cached_writes;
 	char* path;
 	char mode;
 	toweldb_err error;
@@ -70,10 +70,10 @@ typedef struct
 /* Record */
 typedef struct
 {
+	time_t read_time;
 	toweldb_db* parent;
 	char* key;
-	char** data_keys;
-	char** data_values;
+	toweldb_field_node* contents_start;
 } toweldb_rec;
 
 /* Database stuff */
@@ -85,6 +85,9 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
+char* toweldb_get_path( toweldb_db* db, const char* key );
+	/* Get the path to the record specified jointly by the database and the
+	 * key */
 unsigned int toweldb_get_num_recs( toweldb_db* db );
 	/* Get the number of records in the database. */
 char* toweldb_get_next_key( toweldb_db* db );
@@ -95,5 +98,11 @@ toweldb_err toweldb_create_rec( toweldb_db* db, const char* key );
 	/* Create a new record within the database with the given key. */
 toweldb_err toweldb_remove_rec( toweldb_db* db, const char* key );
 	/* Remove the record with name key from the database */
+
+/* Record parsing functions */
+toweldb_rec* toweldb_read_rec( toweldb_db* db, const char* key );
+	/* Read the record specified by key */
+void toweldb_free_rec( toweldb_rec* rec );
+	/* Free the record memory */
 
 #endif
