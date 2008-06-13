@@ -52,6 +52,9 @@ enum _toweldb_err
 /* Linked list of record fields */
 typedef struct _toweldb_tuple
 {
+	off_t key_loc;
+	unsigned int key_len;
+	unsigned long value_len;
 	char* key;
 	char* value;
 	struct _toweldb_tuple* next;

@@ -17,51 +17,28 @@
 
 #include "toweldb.h"
 
-const char* TOWELDB_HEADER_TOKEN = "\n%%";
+#define TOWELDB_COMPONENT_NONE 0
+#define TOWELDB_COMPONENT_KEY 1
+#define TOWELDB_COMPONENT_DATA 2
 
-void toweldb_push_stack( char* stack, unsigned short stack_len, char new_char )
-{
-	unsigned short i = 0;
-	unsigned short stack_max = (stack_len - 2);
-	
-	/* Push back the current stack */
-	for( i = 0; i < stack_max; i++ )
-	{
-		stack[i] = stack[i+1];
-	}
-	
-	/* Add the new char */
-	stack[stack_max] = new_char;
-	stack[stack_max+1] = '\0';
-}
+#define TOWELDB_PHASE_NULL 0
+#define TOWELDB_PHASE_START 1
+#define TOWELDB_PHASE_HALFWAY 2
+#define TOWELDB_PHASE_FINISH 3
 
 toweldb_rec*
 toweldb_read_rec( toweldb_db* db, const char* key )
-{
+{	
 	char* path = NULL;
 	toweldb_rec* rec = NULL;
-	FILE* rec_f = NULL;
-	const short stack_len = 4;
-	
-	/* Array allocation information */
-	unsigned int n_fields = 0;
-	unsigned int header_len = 0;
-	unsigned long field_len = 0;
-	
-	/* Parsing data */
+	FILE* rec_file = NULL;
+	struct stat rec_info;
+	off_t rec_len = 0;
+	off_t current_char = 0;
+	char* rec_contents = NULL;
 	toweldb_field_node* cur_node = NULL;
-	bool header = true;
-	bool in_field = false;
-	unsigned int i = 0;
-	char current_char = 0;
-	
-	/* A small cache stack to store recently read characters */
-	char* read_cache = malloc( sizeof( char ) * stack_len );
-	for( i = 0; i < (stack_len-1); i++ )
-	{
-		read_cache[i] = 0;
-	}
-	read_cache[stack_len-1] = '\0';
+	char token_phase = 0;
+	char rec_component = TOWELDB_COMPONENT_NONE;
 	
 	/* Allocate the data structure */
 	rec = malloc( sizeof( toweldb_rec ));
@@ -71,96 +48,106 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	
 	rec->contents_start = malloc( sizeof( toweldb_field_node ));
 	cur_node = rec->contents_start;
+	cur_node->key_len = 0;
+	cur_node->value_len = 0;
 	cur_node->key = NULL;
 	cur_node->value = NULL;
 	cur_node->next = NULL;
 	
 	/* Open the record */
 	path = toweldb_get_path( db, key );
-	if(( rec_f = fopen( path, "r" )) == NULL )
+	if(( rec_file = fopen( path, "r" )) == NULL )
 	{
 		/* Something's wrong.  Let's skip town, shall we? */
 		return NULL;
 	}
 	
-	/* Parse the record.  I admit it: this is the most bizarre code that has no
-	 * business actually working.  Basically, the main loop only exists to
-	 * stop the parsing at the end of the file and to start the various
-	 * sub-loops. */
-	/* TODO: Allow escaping */
+	/* Figure out how large the file is so we can load it into memory */
+	if( stat( path, &rec_info ))
+	{
+		return NULL;
+	}
+	else
+	{
+		rec_len = rec_info.st_size;
+	}
 	
-	/* Prepare for the loop */
-	/* Push back the current character stack */
-	toweldb_push_stack( read_cache, stack_len, fgetc( rec_f ));
-	
-	while( read_cache[2] != EOF )
-	{	
-		/* Figure out if we've got a header on our hands */
-		if( !strcmp( read_cache, TOWELDB_HEADER_TOKEN ))
+	/* Copy the file into memory */
+	rec_contents = malloc( sizeof( char ) * rec_len );
+	for( current_char = 0; current_char < rec_len; current_char++ )
+	{
+		rec_contents[current_char] = fgetc( rec_file );
+		
+		/* Parsing works kind of crazily currently.  A header token has three
+		 * characters: \n%%.  token_phase holds the number of characters that
+		 * have been matched so far.  So here we look at that */
+		if( rec_contents[current_char] == '\n' )
 		{
-			header = true;
-			in_field = true;
+			/* If we're already in a key, then this should end it */
+			if( rec_component == TOWELDB_COMPONENT_KEY )
+			{
+				rec_component = TOWELDB_COMPONENT_DATA;
+			}
+						
+			if( !token_phase )
+				token_phase = TOWELDB_PHASE_START;
+		}
+		else if( rec_contents[current_char] == '%' )
+		{
+			if( token_phase < TOWELDB_PHASE_FINISH )
+				token_phase++;
 		}
 		else
 		{
-			header = false;
+			if( token_phase )
+				token_phase = TOWELDB_PHASE_NULL;
 		}
 		
-		if( header )
+		/* If we've got a complete token, then mark our location */
+		if( token_phase == TOWELDB_PHASE_FINISH )
 		{
-			/* Initialize the current_char variable for this iteration */
-			current_char = read_cache[2];
-			
-			/* Figure out how long the header is */
-			while( current_char != '\n' )
+			/* If we haven't hit a key yet, then we don't want to allocate a
+			 * new data structure */
+			if( rec_component != TOWELDB_COMPONENT_NONE )
 			{
-				current_char = fgetc( rec_f );
-				header_len++;
-			};
-			
-			/* Go back to the start of the header */
-			fseek( rec_f, (-header_len), SEEK_CUR );
-			
-			/* Allocate the header string */
-			cur_node->key = malloc( sizeof( char ) * ( header_len + 1 ));
-			
-			/* Copy the header string into the allocated memory block.  However,
-			 * header_len needs to be one less since our array counts from 0 */
-			header_len--;
-			for( i = 0; i < header_len; i++ )
-			{
-				cur_node->key[i] = fgetc( rec_f );
+				/* Our length calculations for the previous data includes the
+				 * header token.  Let's ditch that... */
+				cur_node->value_len -= TOWELDB_PHASE_FINISH;
+				
+				/* We need a new field node */
+				cur_node->next = malloc( sizeof( toweldb_field_node ));
+				cur_node = cur_node->next;
+				cur_node->key_len = 0;
+				cur_node->value_len = 0;
+				cur_node->key = NULL;
+				cur_node->value = NULL;
+				cur_node->next = NULL;
 			}
-			cur_node->key[i] = '\0';
 			
-			/* Skip to the next line */
-			fseek( rec_f, 1, SEEK_CUR );
+			/* Mark the location of the end of the token */
+			cur_node->key_loc = current_char;
 			
-			/* Allocate the next field node */
-			cur_node->next = malloc( sizeof( toweldb_field_node ));
-			cur_node->next->key = NULL;
-			cur_node->next->value = NULL;
-			cur_node->next->next = NULL;
-			cur_node = cur_node->next;
-			
-			/* Reset our variables */
-			header_len = 0;
-		}
-		else if( in_field )
-		{
-			/* We need to read the contents of the field.  First let's figure
-			 * out how long it is */
-			printf( "%c", read_cache[2] );
+			/* It's official: we are in a key */
+			rec_component = TOWELDB_COMPONENT_KEY;
 		}
 		
-		/* Go to the next character in the file */
-		toweldb_push_stack( read_cache, stack_len, fgetc( rec_f ));
+		/* Increment the length variables as needed */
+		if( rec_component == TOWELDB_COMPONENT_KEY )
+		{
+			cur_node->key_len++;
+			printf( "%c\n", rec_contents[current_char] );
+		}
+		else if( rec_component == TOWELDB_COMPONENT_DATA )
+		{
+			/* We aren't in a key, so we need to increment the data length */
+			cur_node->value_len++;
+		}
 	}
-	
+
 	/* Wrap up */
-	fclose( rec_f );
+	fclose( rec_file );
 	free( path );
-	free( read_cache );
+	free( rec_contents );
 	
 	return rec;
 }
