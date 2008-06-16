@@ -23,8 +23,7 @@
 
 #define TOWELDB_PHASE_NULL 0
 #define TOWELDB_PHASE_START 1
-#define TOWELDB_PHASE_HALFWAY 2
-#define TOWELDB_PHASE_FINISH 3
+#define TOWELDB_PHASE_FINISH 3 
 
 toweldb_rec*
 toweldb_read_rec( toweldb_db* db, const char* key )
@@ -37,7 +36,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	off_t current_char = 0;
 	char* rec_contents = NULL;
 	toweldb_field_node* cur_node = NULL;
-	char token_phase = 0;
+	char token_phase = TOWELDB_PHASE_NULL;
 	char rec_component = TOWELDB_COMPONENT_NONE;
 	
 	/* Allocate the data structure */
@@ -78,31 +77,6 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	{
 		rec_contents[current_char] = fgetc( rec_file );
 		
-		/* Parsing works kind of crazily currently.  A header token has three
-		 * characters: \n%%.  token_phase holds the number of characters that
-		 * have been matched so far.  So here we look at that */
-		if( rec_contents[current_char] == '\n' )
-		{
-			/* If we're already in a key, then this should end it */
-			if( rec_component == TOWELDB_COMPONENT_KEY )
-			{
-				rec_component = TOWELDB_COMPONENT_DATA;
-			}
-						
-			if( !token_phase )
-				token_phase = TOWELDB_PHASE_START;
-		}
-		else if( rec_contents[current_char] == '%' )
-		{
-			if( token_phase < TOWELDB_PHASE_FINISH )
-				token_phase++;
-		}
-		else
-		{
-			if( token_phase )
-				token_phase = TOWELDB_PHASE_NULL;
-		}
-		
 		/* If we've got a complete token, then mark our location */
 		if( token_phase == TOWELDB_PHASE_FINISH )
 		{
@@ -131,6 +105,30 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 			rec_component = TOWELDB_COMPONENT_KEY;
 		}
 		
+		/* Parsing works kind of crazily currently.  A header token has three
+		 * characters: \n%%.  token_phase holds the number of characters that
+		 * have been matched so far.  So here we look at that */
+		if( rec_contents[current_char] == '\n' )
+		{
+			/* If we're already in a key, then this should end it */
+			if( rec_component == TOWELDB_COMPONENT_KEY )
+			{
+				rec_component = TOWELDB_COMPONENT_DATA;
+			}
+						
+			if( !token_phase )
+				token_phase = TOWELDB_PHASE_START;
+		}
+		else if( rec_contents[current_char] == '%' )
+		{
+			if( token_phase < TOWELDB_PHASE_FINISH )
+				token_phase++;
+		}
+		else
+		{
+			token_phase = TOWELDB_PHASE_NULL;
+		}
+
 		/* Increment the length variables as needed */
 		if( rec_component == TOWELDB_COMPONENT_KEY )
 		{
