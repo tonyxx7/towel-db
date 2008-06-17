@@ -98,8 +98,10 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 				cur_node->next = NULL;
 			}
 			
-			/* Mark the location of the end of the token */
-			cur_node->key_loc = current_char;
+			/* Mark the location of the end of the token.  We have to subtract
+			 * the length of our token to get the start of it instead of the
+			 * end. */
+			cur_node->key_loc = ( current_char - TOWELDB_PHASE_FINISH );
 			
 			/* It's official: we are in a key */
 			rec_component = TOWELDB_COMPONENT_KEY;
@@ -133,7 +135,6 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		if( rec_component == TOWELDB_COMPONENT_KEY )
 		{
 			cur_node->key_len++;
-			printf( "%c\n", rec_contents[current_char] );
 		}
 		else if( rec_component == TOWELDB_COMPONENT_DATA )
 		{
