@@ -80,6 +80,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		/* If we've got a complete token, then mark our location */
 		if( token_phase == TOWELDB_PHASE_FINISH )
 		{
+			cur_node->key_loc = current_char;
 			/* If we haven't hit a key yet, then we don't want to allocate a
 			 * new data structure */
 			if( rec_component != TOWELDB_COMPONENT_NONE )
@@ -133,7 +134,6 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		if( rec_component == TOWELDB_COMPONENT_KEY )
 		{
 			cur_node->key_len++;
-			printf( "%c\n", rec_contents[current_char] );
 		}
 		else if( rec_component == TOWELDB_COMPONENT_DATA )
 		{
