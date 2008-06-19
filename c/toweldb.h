@@ -53,6 +53,7 @@ enum _toweldb_err
 typedef struct _toweldb_tuple
 {
 	off_t key_loc;
+	off_t value_end;
 	unsigned int key_len;
 	unsigned long value_len;
 	char* key;

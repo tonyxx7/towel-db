@@ -29,22 +29,25 @@ toweldb_rec*
 toweldb_read_rec( toweldb_db* db, const char* key )
 {	
 	char* path = NULL;
-	toweldb_rec* rec = NULL;
 	FILE* rec_file = NULL;
+	toweldb_rec* rec = NULL;
 	struct stat rec_info;
-	off_t rec_len = 0;
-	off_t current_char = 0;
 	char* rec_contents = NULL;
 	toweldb_field_node* cur_node = NULL;
+	
+	off_t rec_len = 0;
+	off_t current_pos = 0;
+	off_t current_pos_final = 0;
 	char token_phase = TOWELDB_PHASE_NULL;
 	char rec_component = TOWELDB_COMPONENT_NONE;
 	
-	/* Allocate the data structure */
+	/* Allocate the record */
 	rec = malloc( sizeof( toweldb_rec ));
 	rec->parent = db;
 	rec->key = malloc( sizeof( char ) * ( strlen( key ) + 1 ));
 	strcpy( rec->key, key );
 	
+	/* Allocate the first field node */
 	rec->contents_start = malloc( sizeof( toweldb_field_node ));
 	cur_node = rec->contents_start;
 	cur_node->key_len = 0;
@@ -73,14 +76,13 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	
 	/* Copy the file into memory */
 	rec_contents = malloc( sizeof( char ) * rec_len );
-	for( current_char = 0; current_char < rec_len; current_char++ )
+	for( current_pos = 0; current_pos < rec_len; current_pos++ )
 	{
-		rec_contents[current_char] = fgetc( rec_file );
+		rec_contents[current_pos] = fgetc( rec_file );
 		
 		/* If we've got a complete token, then mark our location */
 		if( token_phase == TOWELDB_PHASE_FINISH )
 		{
-			cur_node->key_loc = current_char;
 			/* If we haven't hit a key yet, then we don't want to allocate a
 			 * new data structure */
 			if( rec_component != TOWELDB_COMPONENT_NONE )
@@ -100,7 +102,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 			}
 			
 			/* Mark the location of the end of the token */
-			cur_node->key_loc = current_char;
+			cur_node->key_loc = current_pos;
 			
 			/* It's official: we are in a key */
 			rec_component = TOWELDB_COMPONENT_KEY;
@@ -109,7 +111,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		/* Parsing works kind of crazily currently.  A header token has three
 		 * characters: \n%%.  token_phase holds the number of characters that
 		 * have been matched so far.  So here we look at that */
-		if( rec_contents[current_char] == '\n' )
+		if( rec_contents[current_pos] == '\n' )
 		{
 			/* If we're already in a key, then this should end it */
 			if( rec_component == TOWELDB_COMPONENT_KEY )
@@ -120,7 +122,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 			if( !token_phase )
 				token_phase = TOWELDB_PHASE_START;
 		}
-		else if( rec_contents[current_char] == '%' )
+		else if( rec_contents[current_pos] == '%' )
 		{
 			if( token_phase < TOWELDB_PHASE_FINISH )
 				token_phase++;
@@ -140,6 +142,31 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 			/* We aren't in a key, so we need to increment the data length */
 			cur_node->value_len++;
 		}
+	}
+
+	/* Now we have to copy the data into our final structures */
+	cur_node = rec->contents_start;
+	while( cur_node != NULL )
+	{	
+		/* First we copy the field key */
+		current_pos_final = 0;
+		/* We need to allocate the key array, but add one to allow for the nul
+		 * character at the end. */
+		cur_node->key = malloc( sizeof( char ) * cur_node->key_len+1 );
+		for( current_pos = cur_node->key_loc; \
+			current_pos < (cur_node->key_loc + cur_node->key_len); \
+			current_pos++ )
+		{
+			cur_node->key[current_pos_final] = rec_contents[current_pos];
+			current_pos_final++;
+		}
+		/* Add the nul character to indicate the end of the key */
+		cur_node->key[current_pos_final] = '\0';
+
+		/* Go onto the next node */
+		printf( "%s\n", cur_node->key );
+		/*printf( "%s\n", cur_node->value );*/
+		cur_node = cur_node->next;
 	}
 
 	/* Wrap up */
