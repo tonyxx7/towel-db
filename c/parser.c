@@ -50,6 +50,8 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	/* Allocate the first field node */
 	rec->contents_start = malloc( sizeof( toweldb_field_node ));
 	cur_node = rec->contents_start;
+	cur_node->key_loc = 0;
+	cur_node->value_end = 0;
 	cur_node->key_len = 0;
 	cur_node->value_len = 0;
 	cur_node->key = NULL;
@@ -82,11 +84,14 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		
 		/* If we've got a complete token, then mark our location */
 		if( token_phase == TOWELDB_PHASE_FINISH )
-		{
+		{	
 			/* If we haven't hit a key yet, then we don't want to allocate a
 			 * new data structure */
 			if( rec_component != TOWELDB_COMPONENT_NONE )
 			{
+				/* Get and store the end of the preceeding data */
+				cur_node->value_end = ( current_pos - TOWELDB_PHASE_FINISH );
+				
 				/* Our length calculations for the previous data includes the
 				 * header token.  Let's ditch that... */
 				cur_node->value_len -= TOWELDB_PHASE_FINISH;
@@ -94,6 +99,8 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 				/* We need a new field node */
 				cur_node->next = malloc( sizeof( toweldb_field_node ));
 				cur_node = cur_node->next;
+				cur_node->key_loc = 0;
+				cur_node->value_end = 0;
 				cur_node->key_len = 0;
 				cur_node->value_len = 0;
 				cur_node->key = NULL;
@@ -144,6 +151,10 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		}
 	}
 
+	/* There is no end token, and thus our last field never got a data end
+	 * marker.  We need to add that, so let's just give the end of the file. */
+	cur_node->value_end = rec_len;
+
 	/* Now we have to copy the data into our final structures */
 	cur_node = rec->contents_start;
 	while( cur_node != NULL )
@@ -162,10 +173,26 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 		}
 		/* Add the nul character to indicate the end of the key */
 		cur_node->key[current_pos_final] = '\0';
-
+		
+		/* There's a '\n' that we want to skip right after the key */
+		current_pos++;
+		
+		/* Now to copy the value of the field... */
+		current_pos_final = 0;
+		/* We need to allocate the value array, but add one to allow for the nul
+		 * character at the end. */
+		cur_node->value = malloc( sizeof( char ) * cur_node->value_len+1 );
+		for( ; current_pos < cur_node->value_end; current_pos++ )
+		{
+			cur_node->value[current_pos_final] = rec_contents[current_pos];
+			current_pos_final++;
+		}
+		/* Add the nul character to indicate the end of the key */
+		cur_node->value[current_pos_final] = '\0';
+		
 		/* Go onto the next node */
-		printf( "%s\n", cur_node->key );
-		/*printf( "%s\n", cur_node->value );*/
+		printf( "Key: %s\n", cur_node->key );
+		printf( "Value: %s\n", cur_node->value );
 		cur_node = cur_node->next;
 	}
 
