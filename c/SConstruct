@@ -1,1 +1,5 @@
-Program( 'toweldb', ['database.c', 'record.c', 'parser.c'] )
+SConscript( ['src/SConstruct'] )
+
+Help("""
+Currently, there are no special options or features available.
+""")

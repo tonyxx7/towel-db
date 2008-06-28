@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "record.h"
 #include "toweldb.h"
 
 bool toweldb_is_record_real( toweldb_db* db, const char* key );

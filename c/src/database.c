@@ -17,32 +17,6 @@
 
 #include "toweldb.h"
 
-int
-main()
-{
-	/* This is all testing garbage */
-	toweldb_db* db = NULL;
-	toweldb_rec* rec = NULL;
-	char* temp = NULL;
-	int i = 0;
-	
-	db = toweldb_open( "/home/andrew/bah", 'c' );
-	
-	/*for( i = 0; i < 5; i++ )
-	{
-		temp = toweldb_get_next_key( db );
-		if( temp != NULL )
-			printf( "%s\n", temp );
-	}*/
-	
-	rec = toweldb_read_rec( db, "foo" );
-	toweldb_free_rec( rec );
-	
-	toweldb_close( db );
-	
-	return 0;
-}
-
 toweldb_db*
 toweldb_open( const char* path, const char mode )
 {	
