@@ -65,13 +65,14 @@ typedef struct _toweldb_tuple
 typedef struct
 {
 	DIR* db_dir;
-	char* path;
+	char* path;ex
 	char mode;
 	toweldb_err error;
 	char max_key_len;
 } toweldb_db;
 
 /* Record */
+typedef struct toweldb_rec 
 typedef struct
 {
 	time_t read_time;
@@ -89,9 +90,6 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
-char* toweldb_get_path( toweldb_db* db, const char* key );
-	/* Get the path to the record specified jointly by the database and the
-	 * key */
 unsigned int toweldb_get_num_recs( toweldb_db* db );
 	/* Get the number of records in the database. */
 char* toweldb_get_next_key( toweldb_db* db );
