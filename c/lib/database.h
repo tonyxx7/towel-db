@@ -21,7 +21,7 @@
 #include "toweldb.h"
 
 /* Database */
-typedef struct
+static typedef struct
 {
 	DIR* db_dir;
 	char* path;
