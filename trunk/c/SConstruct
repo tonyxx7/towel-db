@@ -1,4 +1,4 @@
-SConscript( ['lib/SConstruct'] )
+SConscript( ['lib/SConscript'] )
 
 Help("""
 Currently, there are no special options or features available.

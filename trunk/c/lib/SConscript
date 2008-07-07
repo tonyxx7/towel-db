@@ -1,4 +1,5 @@
 env = Environment( CFLAGS = '-Wall -g' )
+env.Append( CPPPATH = ['#/include'] )
 lib = env.SharedLibrary( 'toweldb', ['database.c', 'record.c', 'parser.c'] )
 env.Install( '/usr/local/lib', lib )
 env.Install( '/usr/local/include', source=['toweldb.h'] )
