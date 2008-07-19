@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database.h"
+#include "toweldb.h"
 
 toweldb_db*
 toweldb_open( const char* path, const char mode )

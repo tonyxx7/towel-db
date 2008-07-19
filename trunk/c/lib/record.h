@@ -20,27 +20,6 @@
 
 #include "toweldb.h"
 
-/* Linked list of record fields */
-typedef struct _toweldb_tuple
-{
-	off_t key_loc;
-	off_t value_end;
-	unsigned int key_len;
-	unsigned long value_len;
-	char* key;
-	char* value;
-	struct _toweldb_tuple* next;
-} toweldb_field_node;
-
-/* Record */
-typedef struct
-{
-	time_t read_time;
-	toweldb_db* parent;
-	char* key;
-	toweldb_field_node* contents_start;
-} toweldb_rec;
-
 /* Record functions */
 char* toweldb_get_path( toweldb_db* db, const char* key );
 	/* Get the path to the record specified jointly by the database and the

@@ -65,15 +65,14 @@ typedef struct _toweldb_tuple
 typedef struct
 {
 	DIR* db_dir;
-	char* path;ex
+	char* path;
 	char mode;
 	toweldb_err error;
 	char max_key_len;
 } toweldb_db;
 
 /* Record */
-typedef struct toweldb_rec 
-typedef struct
+typedef struct toweldb_rec
 {
 	time_t read_time;
 	toweldb_db* parent;
@@ -90,8 +89,6 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
-unsigned int toweldb_get_num_recs( toweldb_db* db );
-	/* Get the number of records in the database. */
 char* toweldb_get_next_key( toweldb_db* db );
 	/* Get the next key in the database.  This is a wrapper around the POSIX
 	 * readdir that skips entries that the programmer doesn't need.  It will
