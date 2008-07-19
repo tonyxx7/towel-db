@@ -16,6 +16,7 @@
  */
 
 #include "toweldb.h"
+#include "record.h"
 
 #define TOWELDB_COMPONENT_NONE 0
 #define TOWELDB_COMPONENT_KEY 1
