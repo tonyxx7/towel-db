@@ -72,34 +72,35 @@ typedef struct
 } toweldb_db;
 
 /* Record */
+/*! An opaque data structure that defines a database record */
 typedef struct _toweldb_rec *toweldb_rec;
 
 /* Database stuff */
+/*! Open a database located at path.  If mode is 'c', create it if needed */
 toweldb_db* toweldb_open( const char* path, const char mode );
-	/* Open a database located at path.  If mode is 'c', create it if needed */
+	/*! Delete the database.  WARNING: BROKEN */
 toweldb_err toweldb_drop( toweldb_db* db );
-	/* Delete the database.  WARNING: BROKEN */
+	/*! Close a database and free the memory storing it. */
 void toweldb_close( toweldb_db* db );
-	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
+/*! Get the number of records in the database. */
 unsigned int toweldb_get_num_recs( toweldb_db* db );
-	/* Get the number of records in the database. */
+	/*! Get the modification time of a record */
 time_t toweldb_record_get_time( toweldb_rec rec );
-	/* Get the modification time of a record */
-char* toweldb_get_next_key( toweldb_db* db );
-	/* Get the next key in the database.  This is a wrapper around the POSIX
+	/*! Get the next key in the database.  This is a wrapper around the POSIX
 	 * readdir that skips entries that the programmer doesn't need.  It will
 	 * return NULL and rewind if it hits the last item in the directory. */
+char* toweldb_get_next_key( toweldb_db* db );
+	/*! Create a new record within the database with the given key. */
 toweldb_err toweldb_create_rec( toweldb_db* db, const char* key );
-	/* Create a new record within the database with the given key. */
+	/*! Remove the record with name key from the database */
 toweldb_err toweldb_remove_rec( toweldb_db* db, const char* key );
-	/* Remove the record with name key from the database */
 
 /* Record parsing functions */
+/*! Read the record specified by key */
 toweldb_rec toweldb_read_rec( toweldb_db* db, const char* key );
-	/* Read the record specified by key */
+	/*! Free the record */
 void toweldb_free_rec( toweldb_rec rec );
-	/* Free the record memory */
 
 #endif
