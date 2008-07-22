@@ -26,12 +26,12 @@
 #define TOWELDB_PHASE_START 1
 #define TOWELDB_PHASE_FINISH 3 
 
-toweldb_rec*
+toweldb_rec
 toweldb_read_rec( toweldb_db* db, const char* key )
 {	
 	char* path = NULL;
 	FILE* rec_file = NULL;
-	toweldb_rec* rec = NULL;
+	toweldb_rec rec = NULL;
 	struct stat rec_info;
 	char* rec_contents = NULL;
 	toweldb_field_node* cur_node = NULL;
@@ -43,7 +43,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	char rec_component = TOWELDB_COMPONENT_NONE;
 	
 	/* Allocate the record */
-	rec = malloc( sizeof( toweldb_rec ));
+	rec = malloc( sizeof( struct _toweldb_rec ));
 	rec->parent = db;
 	rec->key = malloc( sizeof( char ) * ( strlen( key ) + 1 ));
 	strcpy( rec->key, key );
@@ -206,7 +206,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 }
 
 void
-toweldb_free_rec( toweldb_rec* rec )
+toweldb_free_rec( toweldb_rec rec )
 {
 	toweldb_field_node* cur_node = NULL;
 	toweldb_field_node* next_node = NULL;
