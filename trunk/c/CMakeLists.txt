@@ -1,3 +1,5 @@
 project(TOWELDB C)
+enable_testing()
 add_subdirectory(lib)
 add_subdirectory(include)
+add_subdirectory(tests)
