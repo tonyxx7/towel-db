@@ -20,11 +20,20 @@
 
 #include "toweldb.h"
 
+struct _toweldb_rec
+{
+	toweldb_db* parent;
+	char* key;
+	toweldb_field_node* contents_start;
+};
+
 /* Record functions */
 char* toweldb_get_path( toweldb_db* db, const char* key );
 	/* Get the path to the record specified jointly by the database and the
 	 * key */
-unsigned int toweldb_get_num_recs( toweldb_db* db );
-	/* Get the number of records in the database. */
+	
+/* Data structure accessor "methods" */
+toweldb_db* toweldb_record_get_parent( toweldb_rec rec );
+	/* Get the parent database that a record is a member of */
 
 #endif

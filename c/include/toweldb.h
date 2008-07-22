@@ -72,13 +72,7 @@ typedef struct
 } toweldb_db;
 
 /* Record */
-typedef struct toweldb_rec
-{
-	time_t read_time;
-	toweldb_db* parent;
-	char* key;
-	toweldb_field_node* contents_start;
-} toweldb_rec;
+typedef struct _toweldb_rec *toweldb_rec;
 
 /* Database stuff */
 toweldb_db* toweldb_open( const char* path, const char mode );
@@ -89,6 +83,10 @@ void toweldb_close( toweldb_db* db );
 	/* Close a database and free the memory storing it. */
 	
 /* Record functions */
+unsigned int toweldb_get_num_recs( toweldb_db* db );
+	/* Get the number of records in the database. */
+time_t toweldb_record_get_time( toweldb_rec rec );
+	/* Get the modification time of a record */
 char* toweldb_get_next_key( toweldb_db* db );
 	/* Get the next key in the database.  This is a wrapper around the POSIX
 	 * readdir that skips entries that the programmer doesn't need.  It will
@@ -99,9 +97,9 @@ toweldb_err toweldb_remove_rec( toweldb_db* db, const char* key );
 	/* Remove the record with name key from the database */
 
 /* Record parsing functions */
-toweldb_rec* toweldb_read_rec( toweldb_db* db, const char* key );
+toweldb_rec toweldb_read_rec( toweldb_db* db, const char* key );
 	/* Read the record specified by key */
-void toweldb_free_rec( toweldb_rec* rec );
+void toweldb_free_rec( toweldb_rec rec );
 	/* Free the record memory */
 
 #endif

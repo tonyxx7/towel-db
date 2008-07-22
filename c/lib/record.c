@@ -156,3 +156,11 @@ toweldb_remove_rec( toweldb_db* db, const char* key )
 		return toweldb_err_noerror;
 	}
 }
+
+time_t toweldb_record_get_time( toweldb_rec rec )
+{
+	struct stat rec_info;
+	stat( toweldb_get_path( rec->parent, rec->key ), &rec_info );
+	
+	return rec_info.st_mtime;
+}
