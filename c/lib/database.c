@@ -16,8 +16,9 @@
  */
 
 #include "toweldb.h"
+#include "database.h"
 
-toweldb_db*
+toweldb_db
 toweldb_open( const char* path, const char mode )
 {	
 	/* Information about the filesystem */
@@ -25,7 +26,7 @@ toweldb_open( const char* path, const char mode )
 	struct statvfs fs_info;
 	
 	/* The actual database pointer */
-	toweldb_db* db = NULL;
+	toweldb_db db = NULL;
 	
 	/* The path string */
 	char* path_final = NULL;
@@ -89,8 +90,23 @@ toweldb_open( const char* path, const char mode )
 	return db;
 }
 
+DIR** toweldb_get_db_dir( toweldb_db db )
+{
+	return &db->db_dir;
+}
+
+char* toweldb_get_path( toweldb_db db )
+{
+	return db->path;
+}
+
+char toweldb_get_max_key_len( toweldb_db db )
+{
+	return db->max_key_len;
+}
+
 toweldb_err
-toweldb_drop( toweldb_db* db )
+toweldb_drop( toweldb_db db )
 {
 	if( rmdir( db->path ))
 	{
@@ -103,7 +119,7 @@ toweldb_drop( toweldb_db* db )
 }
 
 void
-toweldb_close( toweldb_db* db )
+toweldb_close( toweldb_db db )
 {
 	closedir( db->db_dir );
 	free( db->path );

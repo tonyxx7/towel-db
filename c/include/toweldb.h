@@ -62,45 +62,49 @@ typedef struct _toweldb_tuple
 } toweldb_field_node;
 
 /* Database */
-typedef struct
-{
-	DIR* db_dir;
-	char* path;
-	char mode;
-	toweldb_err error;
-	char max_key_len;
-} toweldb_db;
+/*! An opaque data structure that defines a database handle. */
+typedef struct _toweldb_db *toweldb_db;
 
 /* Record */
-/*! An opaque data structure that defines a database record */
+/*! An opaque data structure that defines a database record. */
 typedef struct _toweldb_rec *toweldb_rec;
 
 /* Database stuff */
-/*! Open a database located at path.  If mode is 'c', create it if needed */
-toweldb_db* toweldb_open( const char* path, const char mode );
+	/*! Open a database located at path.  If mode is 'c', create it if needed.*/
+toweldb_db toweldb_open( const char* path, const char mode );
+	/*! Get the path to the database root. */
+char* toweldb_get_path( toweldb_db db );
+	/*! Get the POSIX data handle on the database root directory.  This is a
+	 * temperary hack and will be removed ASAP. */
+DIR** toweldb_get_db_dir( toweldb_db db );
+	/*! Get the maximum length of a filename for the filesystem that the
+	 * database is on. */
+char toweldb_get_max_key_len( toweldb_db db );
 	/*! Delete the database.  WARNING: BROKEN */
-toweldb_err toweldb_drop( toweldb_db* db );
+toweldb_err toweldb_drop( toweldb_db db );
 	/*! Close a database and free the memory storing it. */
-void toweldb_close( toweldb_db* db );
+void toweldb_close( toweldb_db db );
 	
 /* Record functions */
-/*! Get the number of records in the database. */
-unsigned int toweldb_get_num_recs( toweldb_db* db );
-	/*! Get the modification time of a record */
+	/*! Get the number of records in the database. */
+unsigned int toweldb_get_num_recs( toweldb_db db );
+	/*! Get the modification time of a record. */
 time_t toweldb_record_get_time( toweldb_rec rec );
+	/*! Get the database that owns a record. */
+toweldb_db* toweldb_get_record_parent( toweldb_rec rec );
 	/*! Get the next key in the database.  This is a wrapper around the POSIX
 	 * readdir that skips entries that the programmer doesn't need.  It will
 	 * return NULL and rewind if it hits the last item in the directory. */
-char* toweldb_get_next_key( toweldb_db* db );
+char* toweldb_get_next_key( toweldb_db db );
 	/*! Create a new record within the database with the given key. */
-toweldb_err toweldb_create_rec( toweldb_db* db, const char* key );
-	/*! Remove the record with name key from the database */
-toweldb_err toweldb_remove_rec( toweldb_db* db, const char* key );
+toweldb_err toweldb_create_rec( toweldb_db db, const char* key );
+	/*! Remove the record with name key from the database. */
+toweldb_err toweldb_remove_rec( toweldb_db db, const char* key );
 
 /* Record parsing functions */
-/*! Read the record specified by key */
-toweldb_rec toweldb_read_rec( toweldb_db* db, const char* key );
-	/*! Free the record */
+/*! Read the record specified by key. */
+toweldb_rec toweldb_read_rec( toweldb_db db, const char* key );
+	/*! Free the record. */
 void toweldb_free_rec( toweldb_rec rec );
 
 #endif
