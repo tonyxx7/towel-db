@@ -27,7 +27,7 @@
 #define TOWELDB_PHASE_FINISH 3 
 
 toweldb_rec
-toweldb_read_rec( toweldb_db* db, const char* key )
+toweldb_read_rec( toweldb_db db, const char* key )
 {	
 	char* path = NULL;
 	FILE* rec_file = NULL;
@@ -60,7 +60,7 @@ toweldb_read_rec( toweldb_db* db, const char* key )
 	cur_node->next = NULL;
 	
 	/* Open the record */
-	path = toweldb_get_path( db, key );
+	path = toweldb_get_record_path( db, key );
 	if(( rec_file = fopen( path, "r" )) == NULL )
 	{
 		/* Something's wrong.  Let's skip town, shall we? */

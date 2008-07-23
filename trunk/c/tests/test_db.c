@@ -19,7 +19,7 @@
 
 int main( int argc, char* argv[] )
 {
-	toweldb_db* db = NULL;
+	toweldb_db db = NULL;
 	
 	db = toweldb_open( "./testdb", 'c' );
 	if( db == NULL )

@@ -22,18 +22,14 @@
 
 struct _toweldb_rec
 {
-	toweldb_db* parent;
+	toweldb_db parent;
 	char* key;
 	toweldb_field_node* contents_start;
 };
 
 /* Record functions */
-char* toweldb_get_path( toweldb_db* db, const char* key );
+char* toweldb_get_record_path( toweldb_db db, const char* key );
 	/* Get the path to the record specified jointly by the database and the
 	 * key */
-	
-/* Data structure accessor "methods" */
-toweldb_db* toweldb_record_get_parent( toweldb_rec rec );
-	/* Get the parent database that a record is a member of */
 
 #endif

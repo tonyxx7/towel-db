@@ -18,29 +18,29 @@
 #include "record.h"
 #include "toweldb.h"
 
-bool toweldb_is_record_real( toweldb_db* db, const char* key );
+bool toweldb_is_record_real( toweldb_db db, const char* key );
 	/* Check to see if a key is worth returning as a record key or not */
 
 char*
-toweldb_get_path( toweldb_db* db, const char* key )
+toweldb_get_record_path( toweldb_db db, const char* key )
 {
 	char* path = NULL;
 	
 	path = malloc( sizeof( char ) * \
-		( strlen( db->path ) + strlen( key ) + 1 ));
-	strcpy( path, db->path );
+		( strlen( toweldb_get_path( db )) + strlen( key ) + 1 ));
+	strcpy( path, toweldb_get_path( db ));
 	strcat( path, key );
 	
 	return path;
 }
 
 bool
-toweldb_is_record_real( toweldb_db* db, const char* key )
+toweldb_is_record_real( toweldb_db db, const char* key )
 {
 	struct stat file_info;
 	char* path = NULL;
 	
-	path = toweldb_get_path( db, key );
+	path = toweldb_get_record_path( db, key );
 	
 	/* First let's try getting the file information.  I can't imagine why it
 	 * would fail, but if it does, we don't want it to be considered valid */
@@ -67,14 +67,14 @@ toweldb_is_record_real( toweldb_db* db, const char* key )
 }
 
 unsigned int
-toweldb_get_num_recs( toweldb_db* db )
+toweldb_get_num_recs( toweldb_db db )
 {
 	DIR* db_dir = NULL;
 	struct dirent* dir_entry = NULL;
 	unsigned int n_recs = 0;
 
 	/* Open the database directory stream */
-	db_dir = opendir( db->path );
+	db_dir = opendir( toweldb_get_path( db ));
 	
 	/* Now we just loop through the database keys until we hit NULL */
 	while(( dir_entry = readdir( db_dir )) != NULL )
@@ -91,7 +91,7 @@ toweldb_get_num_recs( toweldb_db* db )
 }
 
 char*
-toweldb_get_next_key( toweldb_db* db )
+toweldb_get_next_key( toweldb_db db )
 {
 	struct dirent* dir_entry = NULL;
 	char found = 0;
@@ -99,13 +99,13 @@ toweldb_get_next_key( toweldb_db* db )
 	while( !found )
 	{
 		/* Read the next file/directory on the stack */
-		dir_entry = readdir( db->db_dir );
+		dir_entry = readdir( *toweldb_get_db_dir( db ));
 		
 		/* First things first; is there anything there?  If not, we need to
 		 * rewind */
 		if( dir_entry == NULL )
 		{
-			rewinddir( db->db_dir );
+			rewinddir( *toweldb_get_db_dir( db ) );
 			return NULL;
 		}
 		
@@ -122,12 +122,12 @@ toweldb_get_next_key( toweldb_db* db )
 }
 
 toweldb_err
-toweldb_create_rec( toweldb_db* db, const char* key )
+toweldb_create_rec( toweldb_db db, const char* key )
 {
 	FILE* rec = NULL;
 	
 	/* Let's first check if the key is too long */
-	if( strlen( key ) > db->max_key_len )
+	if( strlen( key ) > toweldb_get_max_key_len( db ))
 	{
 		return toweldb_err_key_too_long;
 	}
@@ -145,7 +145,7 @@ toweldb_create_rec( toweldb_db* db, const char* key )
 }
 
 toweldb_err
-toweldb_remove_rec( toweldb_db* db, const char* key )
+toweldb_remove_rec( toweldb_db db, const char* key )
 {
 	if( remove( key ))
 	{
@@ -160,7 +160,7 @@ toweldb_remove_rec( toweldb_db* db, const char* key )
 time_t toweldb_record_get_time( toweldb_rec rec )
 {
 	struct stat rec_info;
-	stat( toweldb_get_path( rec->parent, rec->key ), &rec_info );
+	stat( toweldb_get_record_path( rec->parent, rec->key ), &rec_info );
 	
 	return rec_info.st_mtime;
 }
