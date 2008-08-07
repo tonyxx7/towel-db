@@ -1,9 +1,9 @@
 #summary API Reference for towel-db
-#labels Featured,Phase-Implementation
+#labels Phase-Implementation
 
 =Introduction=
-The API is extremely simple, as expected from such a simple database library.  Describes version 0.9.
-As 0.9.x is still under development, this page is deemed unstable and may change at my discretion.
+The API is extremely simple, as expected from such a simple database library.  Describes the latest revision of the pure-Python prototype of toweldb.
+This document shouldn't change for a long time, as the pure-python version of toweldb is deprecated and will never be worked on ever again.
 
 =Objects=
 ==Global==
